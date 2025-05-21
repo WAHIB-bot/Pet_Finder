@@ -87,5 +87,60 @@ async def signup(user: SignupModel):
             "message": "Signup successful!",
             "user_id": user_id
         }
+
+    @app.post("/lost_pet/")
+def report_lost_pet(data: LostPetReport):
+    conn = connect()
+    cursor = conn.cursor()
+    query = """
+    INSERT INTO lost_pets (pet_id, location, last_seen, description)
+    VALUES (%s, %s, %s, %s)
+    """
+    cursor.execute(query, (data.pet_id, data.location, data.last_seen, data.description))
+    conn.commit()
+    conn.close()
+    return {"message": "Lost pet reported"}
+
+
+    @app.post("/found_pet/")
+def report_found_pet(data: FoundPetReport):
+    conn = connect()
+    cursor = conn.cursor()
+    query = """
+    INSERT INTO found_pets (pet_id, found_location, found_date, description)
+    VALUES (%s, %s, %s, %s)
+    """
+    cursor.execute(query, (data.pet_id, data.found_location, data.found_date, data.description))
+    conn.commit()
+    conn.close()
+    return {"message": "Found pet reported"}
+
+    @app.get("/adoptable_pets/")
+def get_adoptable_pets():
+    conn = connect()
+    cursor = conn.cursor()
+    query = "SELECT * FROM adoptable_pets WHERE status = 'Available'"
+    cursor.execute(query)
+    pets = cursor.fetchall()
+    conn.close()
+    return {"adoptable_pets": pets}
+
+
+    @app.get("/pet_matches/")
+def get_matching_pets():
+    conn = connect()
+    cursor = conn.cursor()
+    query = """
+    SELECT * FROM pet_matches
+    JOIN lost_pets ON pet_matches.lost_pet_id = lost_pets.id
+    JOIN found_pets ON pet_matches.found_pet_id = found_pets.id
+    """
+    cursor.execute(query)
+    matches = cursor.fetchall()
+    conn.close()
+    return {"matches": matches}
+
+
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
